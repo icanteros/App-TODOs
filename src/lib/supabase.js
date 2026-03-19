@@ -3,8 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Check your .env file.')
-}
+// Exportamos si faltan las variables para que App.jsx muestre un banner
+export const missingEnvVars = !supabaseUrl || !supabaseAnonKey
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = missingEnvVars
+  ? null
+  : createClient(supabaseUrl, supabaseAnonKey)
+

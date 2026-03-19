@@ -14,6 +14,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 
+import { missingEnvVars } from './lib/supabase'
 import { useTodos } from './hooks/useTodos'
 import { useCategories } from './hooks/useCategories'
 import TodoItem from './components/TodoItem'
@@ -21,7 +22,30 @@ import AddTodoForm from './components/AddTodoForm'
 import CategoryFilter from './components/CategoryFilter'
 import CategoryModal from './components/CategoryModal'
 
+// ─── Env vars guard ───────────────────────────────────────────────────────────
+
+function MissingEnvScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+      <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center">
+        <div className="text-5xl mb-4">⚙️</div>
+        <h1 className="text-xl font-bold text-gray-800 mb-2">Variables de entorno faltantes</h1>
+        <p className="text-sm text-gray-500 mb-5">
+          La app no puede conectarse a Supabase. Configurá las siguientes variables en{' '}
+          <strong>Netlify → Site configuration → Environment variables</strong>:
+        </p>
+        <div className="bg-gray-50 rounded-xl p-4 text-left font-mono text-xs text-gray-700 space-y-1">
+          <p>VITE_SUPABASE_URL=https://xxxx.supabase.co</p>
+          <p>VITE_SUPABASE_ANON_KEY=eyJh...</p>
+        </div>
+        <p className="text-xs text-gray-400 mt-4">Después de agregar las variables, hacé un redeploy.</p>
+      </div>
+    </div>
+  )
+}
+
 // ─── Stats bar ────────────────────────────────────────────────────────────────
+
 
 function StatsBar({ todos }) {
   const total = todos.length
@@ -70,6 +94,8 @@ function EmptyState({ filtered }) {
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  if (missingEnvVars) return <MissingEnvScreen />
+
   const {
     todos,
     loading,
