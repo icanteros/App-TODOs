@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 /**
  * @param {{ categories: Array<{id:string,name:string,color:string}>, onAdd: (payload:any)=>void }} props
@@ -8,6 +8,8 @@ export default function AddTodoForm({ categories, onAdd }) {
   const [dueDate, setDueDate] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [focused, setFocused] = useState(false)
+  
+  const dateInputRef = useRef(null)
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -45,24 +47,29 @@ export default function AddTodoForm({ categories, onAdd }) {
 
       {/* Controls row */}
       <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
-        {/* Date picker — input transparente superpuesto sobre el label */}
-        <div className="relative flex items-center gap-1.5 text-xs text-gray-400 hover:text-indigo-500 cursor-pointer transition-colors group">
-          <svg className="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        {/* Date picker — Botón que dispara el calendario nativo */}
+        <button
+          type="button"
+          onClick={() => dateInputRef.current?.showPicker()}
+          className="relative flex items-center gap-1.5 text-xs text-gray-400 hover:text-indigo-500 cursor-pointer transition-colors group focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded-lg px-1 py-0.5"
+        >
+          <svg className="w-3.5 h-3.5 group-hover:text-indigo-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
-          <span className="pointer-events-none">
+          <span>
             {dueDate
               ? <span className="text-indigo-600 font-medium">{dueDate}</span>
               : 'Fecha'}
           </span>
-          {/* Cubre todo el área del div — invisible pero clickeable */}
           <input
+            ref={dateInputRef}
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="absolute inset-0 w-full opacity-0 cursor-pointer"
+            // Visible lo mínimo posible para que showPicker() funcione sin afectar el layout
+            className="absolute opacity-0 w-0 h-0 pointer-events-none"
           />
-        </div>
+        </button>
 
         {/* Category select */}
         <div className="flex items-center gap-1">
