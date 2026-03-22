@@ -21,6 +21,8 @@ import TodoItem from './components/TodoItem'
 import AddTodoForm from './components/AddTodoForm'
 import CategoryFilter from './components/CategoryFilter'
 import CategoryModal from './components/CategoryModal'
+import Auth from './components/Auth'
+import { supabase } from './lib/supabase'
 
 // ─── Env vars guard ───────────────────────────────────────────────────────────
 
@@ -93,8 +95,9 @@ function EmptyState({ filtered }) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-export default function App() {
-  if (missingEnvVars) return <MissingEnvScreen />
+// ─── Todo App ────────────────────────────────────────────────────────────────
+
+function TodoApp() {
 
   // ── Dark mode ──
   const [darkMode, setDarkMode] = useState(
@@ -126,6 +129,7 @@ export default function App() {
   const { categories, addCategory, deleteCategory } = useCategories()
 
   const [activeCategory, setActiveCategory] = useState(null)
+  const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'pending' | 'completed'
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
 
   // ── Editable title ──
@@ -149,9 +153,12 @@ export default function App() {
   )
 
   // Derived: filtered todos
-  const filteredTodos = activeCategory
-    ? todos.filter((t) => t.category_id === activeCategory)
-    : todos
+  const filteredTodos = todos.filter((t) => {
+    if (activeCategory && t.category_id !== activeCategory) return false
+    if (statusFilter === 'pending' && t.completed) return false
+    if (statusFilter === 'completed' && !t.completed) return false
+    return true
+  })
 
   // ── Handlers ──
 
@@ -204,29 +211,42 @@ export default function App() {
           </button>
 
           {/* Header */}
-          <header className="mb-8">
-            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">Mi espacio</p>
-            {editingTitle ? (
-              <input
-                autoFocus
-                value={titleDraft}
-                onChange={(e) => setTitleDraft(e.target.value)}
-                onBlur={commitTitle}
-                onKeyDown={(e) => { if (e.key === 'Enter') commitTitle(); if (e.key === 'Escape') { setTitleDraft(pageTitle); setEditingTitle(false) } }}
-                className="text-3xl font-bold text-gray-900 tracking-tight bg-indigo-50 border border-indigo-300 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full"
-              />
-            ) : (
-              <h1
-                className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group inline-flex items-center gap-2"
-                onClick={() => { setTitleDraft(pageTitle); setEditingTitle(true) }}
-                title="Hacé click para editar"
-              >
-                {pageTitle}
-                <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-              </h1>
-            )}
+          <header className="mb-8 flex justify-between items-start">
+            <div>
+              <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">Mi espacio</p>
+              {editingTitle ? (
+                <input
+                  autoFocus
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onBlur={commitTitle}
+                  onKeyDown={(e) => { if (e.key === 'Enter') commitTitle(); if (e.key === 'Escape') { setTitleDraft(pageTitle); setEditingTitle(false) } }}
+                  className="text-3xl font-bold text-gray-900 tracking-tight bg-indigo-50 border border-indigo-300 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full"
+                />
+              ) : (
+                <h1
+                  className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group inline-flex items-center gap-2"
+                  onClick={() => { setTitleDraft(pageTitle); setEditingTitle(true) }}
+                  title="Hacé click para editar"
+                >
+                  {pageTitle}
+                  <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </h1>
+              )}
+            </div>
+
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20"
+              title="Cerrar sesión"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Salir</span>
+            </button>
           </header>
 
           {/* Add form */}
@@ -239,6 +259,27 @@ export default function App() {
             onChange={handleCategoryChange}
             onManage={() => setCategoryModalOpen(true)}
           />
+
+          {/* Status filter */}
+          <div className="flex gap-2 mb-6">
+            {[
+              { id: 'all', label: 'Todas' },
+              { id: 'pending', label: 'Pendientes' },
+              { id: 'completed', label: 'Completadas' }
+            ].map(status => (
+              <button
+                key={status.id}
+                onClick={() => setStatusFilter(status.id)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                  statusFilter === status.id
+                    ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400'
+                }`}
+              >
+                {status.label}
+              </button>
+            ))}
+          </div>
 
           {/* Stats */}
           <StatsBar todos={todos} />
@@ -292,4 +333,43 @@ export default function App() {
       </div>
     </>
   )
+}
+
+// ─── Main App Wrapper ────────────────────────────────────────────────────────
+
+export default function App() {
+  if (missingEnvVars) return <MissingEnvScreen />
+
+  const [session, setSession] = useState(null)
+  const [loadingSession, setLoadingSession] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoadingSession(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (loadingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900 transition-colors duration-300">
+        <svg className="w-8 h-8 animate-spin text-indigo-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <Auth />
+  }
+
+  return <TodoApp />
 }
