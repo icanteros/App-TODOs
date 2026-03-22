@@ -96,6 +96,22 @@ function EmptyState({ filtered }) {
 export default function App() {
   if (missingEnvVars) return <MissingEnvScreen />
 
+  // ── Dark mode ──
+  const [darkMode, setDarkMode] = useState(
+    () => localStorage.getItem('theme') === 'dark' || 
+          (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  )
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [darkMode])
+
   const {
     todos,
     loading,
@@ -107,10 +123,24 @@ export default function App() {
     getTodos,
   } = useTodos()
 
-  const { categories, addCategory } = useCategories()
+  const { categories, addCategory, deleteCategory } = useCategories()
 
   const [activeCategory, setActiveCategory] = useState(null)
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
+
+  // ── Editable title ──
+  const [pageTitle, setPageTitle] = useState(
+    () => localStorage.getItem('app-title') || 'Tareas'
+  )
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(pageTitle)
+
+  const commitTitle = () => {
+    const val = titleDraft.trim() || 'Tareas'
+    setPageTitle(val)
+    localStorage.setItem('app-title', val)
+    setEditingTitle(false)
+  }
 
   // DnD sensors
   const sensors = useSensors(
@@ -148,31 +178,55 @@ export default function App() {
         open={categoryModalOpen}
         onClose={() => setCategoryModalOpen(false)}
         onAdd={addCategory}
+        onDelete={deleteCategory}
         categories={categories}
       />
 
       {/* ─── Main layout ──────────────────────────────────────────── */}
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 py-10 px-4">
-        <div className="max-w-xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-10 px-4 transition-colors duration-300">
+        <div className="max-w-xl mx-auto relative">
+          
+          {/* Dark Mode Floating Toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="absolute top-0 right-0 p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-yellow-400 focus:outline-none transition-colors"
+            title={darkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          >
+            {darkMode ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
 
           {/* Header */}
           <header className="mb-8">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-1">Mi espacio</p>
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Tareas</h1>
-              </div>
-              {/* Settings / category button */}
-              <button
-                onClick={() => setCategoryModalOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-indigo-600 transition-colors px-3 py-2 rounded-xl hover:bg-indigo-50"
+            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">Mi espacio</p>
+            {editingTitle ? (
+              <input
+                autoFocus
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onBlur={commitTitle}
+                onKeyDown={(e) => { if (e.key === 'Enter') commitTitle(); if (e.key === 'Escape') { setTitleDraft(pageTitle); setEditingTitle(false) } }}
+                className="text-3xl font-bold text-gray-900 tracking-tight bg-indigo-50 border border-indigo-300 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full"
+              />
+            ) : (
+              <h1
+                className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group inline-flex items-center gap-2"
+                onClick={() => { setTitleDraft(pageTitle); setEditingTitle(true) }}
+                title="Hacé click para editar"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z"/>
+                {pageTitle}
+                <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                 </svg>
-                Etiquetas
-              </button>
-            </div>
+              </h1>
+            )}
           </header>
 
           {/* Add form */}
@@ -191,7 +245,7 @@ export default function App() {
 
           {/* Error banner */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl px-4 py-3 mb-4 flex items-center gap-2">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs rounded-xl px-4 py-3 mb-4 flex items-center gap-2">
               <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
               </svg>
@@ -201,7 +255,7 @@ export default function App() {
 
           {/* Todo list */}
           {loading ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-gray-300">
+            <div className="flex flex-col items-center gap-3 py-16 text-gray-300 dark:text-gray-600">
               <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>

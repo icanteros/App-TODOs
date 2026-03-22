@@ -99,8 +99,8 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }) {
       className={`
         flex items-center gap-3 rounded-2xl px-4 py-3 border transition-shadow group
         ${isDragging
-          ? 'bg-indigo-50 border-indigo-200 shadow-xl ring-2 ring-indigo-300'
-          : 'bg-white border-gray-100 shadow-sm hover:shadow-md'
+          ? 'bg-indigo-50 border-indigo-200 shadow-xl ring-2 ring-indigo-300 dark:bg-indigo-900/30 dark:border-indigo-500/50'
+          : 'bg-white border-gray-100 shadow-sm hover:shadow-md dark:bg-gray-800 dark:border-gray-700'
         }
         ${todo.completed ? 'opacity-60' : ''}
       `}
@@ -123,7 +123,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }) {
           flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
           ${todo.completed
             ? 'bg-indigo-500 border-indigo-500 text-white'
-            : 'border-gray-300 hover:border-indigo-400'
+            : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-400'
           }
         `}
         aria-label={todo.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
@@ -145,7 +145,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }) {
         ) : (
           <p
             className={`text-sm font-medium truncate leading-snug ${
-              todo.completed ? 'line-through text-gray-400' : 'text-gray-800'
+              todo.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'
             }`}
             onDoubleClick={() => !todo.completed && setEditing(true)}
           >
