@@ -45,12 +45,8 @@ coverage/
 .netlify/
 
 # ─── Playwright ──────────────────────────────────────────────────────────────
-playwright-report/
-test-results/
-
-# Playwright
-/test-results/
 /playwright-report/
+/test-results/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
