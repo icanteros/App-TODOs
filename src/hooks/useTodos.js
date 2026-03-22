@@ -19,9 +19,16 @@ export function useTodos() {
     setLoading(true)
     setError(null)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setTodos([])
+        return
+      }
+
       let query = supabase
         .from('todos')
         .select('*, categories(id, name, color)')
+        .eq('user_id', user.id)
         .order('position', { ascending: true })
 
       if (categoryId) {
@@ -55,6 +62,9 @@ export function useTodos() {
         ? Math.max(...todos.map((t) => t.position))
         : -1
 
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
       const { data, error: sbError } = await supabase
         .from('todos')
         .insert({
@@ -63,6 +73,7 @@ export function useTodos() {
           due_date: payload.due_date ?? null,
           category_id: payload.category_id ?? null,
           position: maxPosition + 1,
+          user_id: user.id
         })
         .select('*, categories(id, name, color)')
         .single()
@@ -85,10 +96,14 @@ export function useTodos() {
   const updateTodo = useCallback(async (id, updates) => {
     setError(null)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
       const { data, error: sbError } = await supabase
         .from('todos')
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id)
         .select('*, categories(id, name, color)')
         .single()
 
@@ -109,10 +124,14 @@ export function useTodos() {
   const deleteTodo = useCallback(async (id) => {
     setError(null)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
       const { error: sbError } = await supabase
         .from('todos')
         .delete()
         .eq('id', id)
+        .eq('user_id', user.id)
 
       if (sbError) throw sbError
       setTodos((prev) => prev.filter((t) => t.id !== id))
@@ -135,6 +154,9 @@ export function useTodos() {
     setTodos(reordered)
 
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
       // Build an array of upsert rows with updated positions
       const updates = reordered.map((todo, index) => ({
         id: todo.id,
@@ -143,6 +165,7 @@ export function useTodos() {
         due_date: todo.due_date,
         category_id: todo.category_id,
         position: index,
+        user_id: user.id
       }))
 
       const { error: sbError } = await supabase

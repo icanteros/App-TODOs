@@ -18,9 +18,16 @@ export function useCategories() {
     setLoading(true)
     setError(null)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setCategories([])
+        return
+      }
+
       const { data, error: sbError } = await supabase
         .from('categories')
         .select('*')
+        .eq('user_id', user.id)
         .order('name', { ascending: true })
 
       if (sbError) throw sbError
@@ -44,11 +51,15 @@ export function useCategories() {
   const addCategory = useCallback(async (payload) => {
     setError(null)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
       const { data, error: sbError } = await supabase
         .from('categories')
         .insert({
           name: payload.name,
           color: payload.color ?? '#6366f1',
+          user_id: user.id
         })
         .select()
         .single()
@@ -70,10 +81,14 @@ export function useCategories() {
   const deleteCategory = useCallback(async (id) => {
     setError(null)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user logged in')
+
       const { error: sbError } = await supabase
         .from('categories')
         .delete()
         .eq('id', id)
+        .eq('user_id', user.id)
 
       if (sbError) throw sbError
       setCategories((prev) => prev.filter((c) => c.id !== id))
