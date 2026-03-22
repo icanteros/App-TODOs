@@ -22,7 +22,7 @@ export default function Auth() {
           password,
         })
         if (signUpError) throw signUpError
-        setMessage('¡Registro exitoso! Ya podés iniciar sesión.')
+        setMessage('¡Registro exitoso! Revisá tu casilla de correo (y spam) para verificar la cuenta y poder entrar.')
         setMode('login')
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
