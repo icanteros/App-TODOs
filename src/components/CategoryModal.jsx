@@ -24,10 +24,11 @@ const PALETTE = [
  *   categories: Array<{id:string,name:string,color:string}>
  * }} props
  */
-export default function CategoryModal({ open, onClose, onAdd, categories }) {
+export default function CategoryModal({ open, onClose, onAdd, onDelete, categories }) {
   const [name, setName] = useState('')
   const [color, setColor] = useState(PALETTE[0])
   const [saving, setSaving] = useState(false)
+  const [confirmId, setConfirmId] = useState(null) // id pendiente de confirmación
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -79,19 +80,55 @@ export default function CategoryModal({ open, onClose, onAdd, categories }) {
         {categories.length > 0 && (
           <div className="mb-5">
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Existentes</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-1.5">
               {categories.map((cat) => (
-                <span
+                <div
                   key={cat.id}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full text-white font-medium"
-                  style={{ backgroundColor: cat.color }}
+                  className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-gray-50 group"
                 >
-                  {cat.name}
-                </span>
+                  {/* Badge */}
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                    <span className="text-sm text-gray-700 truncate">{cat.name}</span>
+                  </div>
+
+                  {/* Delete — click once to confirm, click again to delete */}
+                  {confirmId === cat.id ? (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-xs text-red-500">¿Eliminar?</span>
+                      <button
+                        type="button"
+                        onClick={() => { onDelete(cat.id); setConfirmId(null) }}
+                        className="text-xs font-semibold text-red-500 hover:text-red-700 px-2 py-0.5 rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        Sí
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmId(null)}
+                        className="text-xs text-gray-400 hover:text-gray-600 px-2 py-0.5 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmId(cat.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50"
+                      aria-label={`Eliminar ${cat.name}`}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
         )}
+
 
         {/* Add form */}
         <form onSubmit={handleSubmit}>

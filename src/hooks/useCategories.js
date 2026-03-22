@@ -62,11 +62,32 @@ export function useCategories() {
     }
   }, [])
 
+  // ─── DELETE ─────────────────────────────────────────────────────────────────
+
+  /**
+   * @param {string} id
+   */
+  const deleteCategory = useCallback(async (id) => {
+    setError(null)
+    try {
+      const { error: sbError } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id)
+
+      if (sbError) throw sbError
+      setCategories((prev) => prev.filter((c) => c.id !== id))
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [])
+
   return {
     categories,
     loading,
     error,
     getCategories,
     addCategory,
+    deleteCategory,
   }
 }
